@@ -8,8 +8,8 @@ import telebot
 
 # configuration
 START_DATE = datetime(2017, 10, 02, 00, 00, 00)
-END_DATE = datetime(2017, 12, 5, 23, 59, 59)
-BOT_TOKEN = '%telegram_bot_token%'  # telegram bot token
+END_DATE = datetime(2018, 01, 31, 23, 59, 59)
+BOT_TOKEN = '%bot_token%'  # telegram bot token
 DESTINATION = '%telegram_destination_id%'  # telegram chat/group id
 APPOINTMENT_TYPE = 'Renewal'  # either Renewal or New
 
@@ -20,7 +20,7 @@ SLOT_FORMAT = '%d %B %Y - %H:%M'
 
 def setup_logging():
     logger = logging.getLogger('gnib_checker')
-    hdlr = logging.FileHandler('/var/log/gnib_checker.log')
+    hdlr = logging.FileHandler('./gnib_checker.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
@@ -43,6 +43,7 @@ def main():
 	    r = requests.get(REQUEST_URL.format(
                 url=URL, time=time.time()), verify=False)
         except Exception:
+            logger.exception('Unexpected exception')
             continue
         result = json.loads(r.content)
         if not result.get('slots'):
@@ -51,10 +52,13 @@ def main():
 
         for slot in result['slots']:
             slot_date = datetime.strptime(slot['time'], SLOT_FORMAT)
+            logger.debug('Available slot: {}'.format(slot_date))
             if slot_date > START_DATE and slot_date < END_DATE:
                 dates_to_send.append(slot_date.strftime("%Y-%m-%d %H:%M"))
+            else:
+                logger.debug('The slot {} is outside of the defined time period. Not sending notification'.format(slot_date))
 
-        if dates_to_send == sent_dates:
+        if dates_to_send and dates_to_send == sent_dates:
 	    logger.debug('The same slots, not sending notification')
             continue
 
@@ -65,6 +69,7 @@ def main():
                 bot.send_message(DESTINATION, message)
                 logger.info(message)
             except Exception:
+                logger.exception('Unexpected exception')
                 continue
         sent_dates = dates_to_send
 
