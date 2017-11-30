@@ -9,28 +9,32 @@ import telebot
 # configuration
 START_DATE = datetime(2017, 10, 02, 00, 00, 00)
 END_DATE = datetime(2017, 12, 5, 23, 59, 59)
-BOT_TOKEN = '%telegram_bot_token%'
-DESTINATION = '%telegram_destination_id%'
+BOT_TOKEN = '%telegram_bot_token%'  # telegram bot token
+DESTINATION = '%telegram_destination_id%'  # telegram chat/group id
+APPOINTMENT_TYPE = 'Renewal'  # either Renewal or New
 
 
-URL = 'https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Work&sbcat=All&typ=Renewal'
+URL = 'https://burghquayregistrationoffice.inis.gov.ie/Website/AMSREG/AMSRegWeb.nsf/(getAppsNear)?openpage&cat=Work&sbcat=All&typ={}'.format(APPOINTMENT_TYPE)
 REQUEST_URL = '{url}&_={time}'
 SLOT_FORMAT = '%d %B %Y - %H:%M'
 
-logger = logging.getLogger('gnib_checker')
-hdlr = logging.FileHandler('/var/log/gnib_checker.log')
-formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-hdlr.setFormatter(formatter)
-logger.addHandler(hdlr)
-logger.setLevel(logging.DEBUG)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+def setup_logging():
+    logger = logging.getLogger('gnib_checker')
+    hdlr = logging.FileHandler('/var/log/gnib_checker.log')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    logger.addHandler(hdlr)
+    logger.setLevel(logging.DEBUG)
+    
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    return logger
 
 def main():
     bot = telebot.TeleBot(BOT_TOKEN)
+    logger = setup_logging()
     sent_dates = []
     while True:
 	time.sleep(5)
